@@ -1,0 +1,982 @@
+{
+  "name": "PreEntrega_Modulo3_Memoria_Largo_Plazo_Agentica",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-memory-entry",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "31bd16b0-43ed-42a3-98a9-eb52eed88be2",
+      "name": "Webhook Trigger (Session Entry)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        112
+      ],
+      "notesInFlow": true,
+      "webhookId": "8b4c1456-87dd-4342-8fd0-4a9a227146d5",
+      "notes": "Punto de entrada. Captura el identificador único (session_id), el input del usuario y el conteo de mensajes de la sesión."
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQVsqbc7GAP738Y",
+          "mode": "list",
+          "cachedResultName": "Modulo 2",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblfhFNCZkaYSDcEA",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y/tblfhFNCZkaYSDcEA"
+        },
+        "filterByFormula": "=({Session_ID} = '{{ $json.body.session_id }}')",
+        "options": {}
+      },
+      "id": "a315fa88-4967-4efe-a4fa-2d16314d4d42",
+      "name": "Airtable: Buscar Registro por Session_ID",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -480,
+        112
+      ],
+      "alwaysOutputData": true,
+      "notesInFlow": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KlpxouRJMWVEj21V",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Consulta la base de persistencia externa filtrando de manera estricta por Session_ID para evitar amnesia y cruce de datos."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.id || $json.fields?.Session_ID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "d8e46cae-6c47-4a5c-a404-b18024c42d46"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "93741de4-bc84-40b1-a600-90af7c2b9ffa",
+      "name": "IF: ¿Usuario Existe en DB?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        112
+      ],
+      "notesInFlow": true,
+      "notes": "Evalúa si la consulta devolvió un registro histórico previo. Rama True = Recurrente, Rama False = Usuario Nuevo."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "user_name",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.user_name || 'Nombre' }}",
+              "type": "string"
+            },
+            {
+              "id": "u4",
+              "name": "record_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "u5",
+              "name": "session_id",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "u6",
+              "name": "chat_input",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.chat_input || $('Webhook Trigger (Session Entry)').item.json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "u7",
+              "name": "message_count",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.message_count || $('Airtable: Buscar Registro por Session_ID').item.json.Cantidad }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4c47ed49-1bb3-4ee6-be69-bb93a41706ef",
+      "name": "Set: Contexto Usuario Recurrente",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        -48
+      ],
+      "notesInFlow": true,
+      "notes": "Extrae y formatea limpiamente las variables de largo plazo recuperadas de Airtable."
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appQVsqbc7GAP738Y",
+          "mode": "list",
+          "cachedResultName": "Modulo 2",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblfhFNCZkaYSDcEA",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y/tblfhFNCZkaYSDcEA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Estado": false,
+            "Session_ID": "={{ $('Webhook Trigger (Session Entry)').item.json.body.session_id }}",
+            "Nombre": "={{ $('Webhook Trigger (Session Entry)').item.json.body.user_name }}",
+            "Cantidad": 1
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "60ebcab6-08b1-4e32-ab8a-f5ba42fc080d",
+      "name": "Airtable: Registrar Nuevo Usuario",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        272
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KlpxouRJMWVEj21V",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Registra al usuario nuevo en Airtable sin arrojar errores técnicos ni variables huérfanas."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nu1",
+              "name": "user_name",
+              "value": "={{ $json.fields.Nombre || 'Nuevo Cliente' }}",
+              "type": "string"
+            },
+            {
+              "id": "nu4",
+              "name": "record_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "nu5",
+              "name": "session_id",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.session_id }}",
+              "type": "string"
+            },
+            {
+              "id": "nu6",
+              "name": "chat_input",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.chat_input || $('Webhook Trigger (Session Entry)').item.json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "nu7",
+              "name": "message_count",
+              "value": "={{ $('Webhook Trigger (Session Entry)').item.json.body.message_count || $('Webhook Trigger (Session Entry)').item.json.body.message_count}}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "58095586-8dfd-4c77-a4cb-fce44b9961eb",
+      "name": "Set: Contexto Inicial Limpio",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        176
+      ],
+      "notesInFlow": true,
+      "notes": "Define variables iniciales limpias para garantizar una inyección semántica sin valores nulos."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook Trigger (Session Entry)').item.json.body.chat_input }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=### CONFIGURACIÓN DE IDENTIDAD Y MEMORIA DE LARGO PLAZO ###\nEl usuario se llama {{ $json.user_name }}.\nEl estado de su última solicitud es: {{ $('Airtable: Buscar Registro por Session_ID').item.json.Estado }}.\nEl contexto de vuestra última charla es: {{ $('Airtable: Buscar Registro por Session_ID').item.json.Resumen }}.\n### FIN DEL CONTEXTO COMPARTIDO ###\n\nEres un asistente de operaciones y atención corporativa de alto rendimiento. Usa la información de la memoria para ofrecer respuestas contextuales, cálidas y precisas sin repetir preguntas sobre datos ya conocidos.\n\nDebes darme la respuesta de la pregunta y tambien darme un resumen de lo que pregunto y que se respondio para guardar en datos clave, si ya hay un contexto tambien incluyelo en el resumen, debes darlo con el siguiente formato:\n{\n  \"respuesta\": \"respuesta a la pregunta\",\n  \"resumen\": \"aqui debes colocar un resumen de la pregunta y la respuesta que le brindaste\",\n  \"estado\" : \"Aqui debes colocar true si se pudo resolver la respuesta con exito, sino false\",\n \"datos\" : \"aqui pon unas palabras clave sobre el resumen\"\n}\n"
+        }
+      },
+      "id": "41f9b92c-935c-441d-a93f-247c57f10643",
+      "name": "AI Agent Principal (Tools Agent)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        416,
+        112
+      ],
+      "notesInFlow": true,
+      "notes": "Agente principal configurado en modo Tools Agent. Inyecta de forma segura el contexto de largo plazo recuperado."
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.record_id }}"
+      },
+      "id": "10385b53-abb0-4f44-b7aa-674615355708",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        304
+      ],
+      "notesInFlow": true,
+      "notes": "Memoria de corto plazo en memoria local para retener el hilo inmediato durante la sesión activa."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $('Set: Contexto Usuario Recurrente').item?.json?.message_count || $('Set: Contexto Inicial Limpio').item?.json?.message_count || $('Webhook Trigger (Session Entry)').item.json.body.message_count || 1 }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "id": "b08bc013-e1ec-4fc2-a54a-95642ce8a969"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e06c0abf-ad1a-42e5-ac9b-cb119112fd3b",
+      "name": "IF: ¿Supera 5 Mensajes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        112
+      ],
+      "notesInFlow": true,
+      "notes": "Control determinista: activa la rutina de summarization únicamente cuando la sesión supera 5 intercambios."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza la conversación actual y el contexto previo para generar un resumen ejecutivo estructurado.\n\nContexto previo: {{ $('AI Agent Principal (Tools Agent)').item.json.output.resumen }}\nÚltimo mensaje del usuario: {{ $('Webhook Trigger (Session Entry)').item.json.body.chat_input }}\nÚltimos datos clave del resumen: {{ $('Airtable: Buscar Registro por Session_ID').item.json['Datos Clave'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un condensador de contexto y memoria ejecutiva. Extrae estrictamente la información en formato JSON cumpliendo con el schema requerido. Sé conciso y fáctico. La respuesta debe ser:\n{\n \"resumen\": \"aqui coloca el resumen todo el contexto e ideas clave\"\n}"
+        }
+      },
+      "id": "191a3d5b-cb63-47ea-a45f-d42db8678ee8",
+      "name": "LLM Summarizer (GPT-4o-mini)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        960,
+        -64
+      ],
+      "notesInFlow": true,
+      "notes": "Ejecuta la extracción estructurada del resumen usando GPT-4o-mini y Output Parser JSON."
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n \"resumen\": \"aqui coloca el resumen todo el contexto e ideas clave\"\n}"
+      },
+      "id": "8b56102c-5ccc-4e47-b7bc-afa97fa6193f",
+      "name": "Structured Output Parser (JSON)",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1120,
+        112
+      ],
+      "notesInFlow": true,
+      "notes": "Garantiza que la respuesta del summarizer sea un objeto JSON estricto con las 3 claves obligatorias."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appQVsqbc7GAP738Y",
+          "mode": "list",
+          "cachedResultName": "Modulo 2",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblfhFNCZkaYSDcEA",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y/tblfhFNCZkaYSDcEA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Estado": "={{ $('AI Agent Principal (Tools Agent)').item.json.output.estado }}",
+            "Session_ID": "={{ $('Webhook Trigger (Session Entry)').item.json.body.session_id }}",
+            "Resumen": "={{ $json.output.resumen }}",
+            "Cantidad": 1
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "fec891de-cc44-43f0-85c1-1baa526cf1c8",
+      "name": "Airtable: Sobreescribir Memoria (Idempotente)",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1264,
+        -64
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KlpxouRJMWVEj21V",
+          "name": "Airtable Personal Access Token account"
+        }
+      },
+      "notes": "Persiste el nuevo resumen estructurado en Airtable sobreescribiendo el registro anterior de forma idempotente."
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('AI Agent Principal (Tools Agent)').item.json.output.respuesta }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "1a63ff43-a1c5-435d-ba99-fe990dd1d728",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1488,
+        144
+      ],
+      "notesInFlow": true,
+      "notes": "Devuelve al cliente o canal final la respuesta generada por el agente y el estado de la memoria."
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        304
+      ],
+      "id": "5643127b-62bf-49c0-8fcf-9c35b5ead3eb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "a42XFGd7V7F7c7ND",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"respuesta\": \"respuesta a la pregunta\",\n  \"resumen\": \"aqui debes colocar un resumen de la pregunta y la respuesta que le brindaste\",\n  \"estado\" : \"Aqui debes colocar true si se pudo resolver la respuesta con exito, sino false\",\n  \"datos\" : \"aqui pon unas palabras clave sobre el resumen\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        304
+      ],
+      "id": "d697346d-16a8-41d7-835d-5be05cd59714",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        112
+      ],
+      "id": "5ab28c1b-f361-481c-9704-9a3a1afbb493",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "a42XFGd7V7F7c7ND",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appQVsqbc7GAP738Y",
+          "mode": "list",
+          "cachedResultName": "Modulo 2",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblfhFNCZkaYSDcEA",
+          "mode": "list",
+          "cachedResultName": "Table 1",
+          "cachedResultUrl": "https://airtable.com/appQVsqbc7GAP738Y/tblfhFNCZkaYSDcEA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Estado": "={{ $('AI Agent Principal (Tools Agent)').item.json.output.estado }}",
+            "Session_ID": "={{ $('Webhook Trigger (Session Entry)').item.json.body.session_id }}",
+            "Resumen": "={{ $('AI Agent Principal (Tools Agent)').item.json.output.resumen }}",
+            "Cantidad": "={{ $('Set: Contexto Usuario Recurrente').item?.json?.message_count + 1 || $('Set: Contexto Inicial Limpio').item?.json?.message_count + 1 }}",
+            "Datos Clave": "={{ $('AI Agent Principal (Tools Agent)').item.json.output.datos }}",
+            "Nombre": "={{ $('Set: Contexto Usuario Recurrente').item?.json?.user_name || $('Set: Contexto Inicial Limpio').item?.json?.user_name }}"
+          },
+          "matchingColumns": [
+            "Session_ID"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Session_ID",
+              "displayName": "Session_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Actualización",
+              "displayName": "Fecha de Actualización",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Datos Clave",
+              "displayName": "Datos Clave",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cantidad",
+              "displayName": "Cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1056,
+        384
+      ],
+      "id": "585f8d51-0fdd-4f80-b442-7dbe1c358dd0",
+      "name": "Actualizar registro sin hacer resumen detallado",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "KlpxouRJMWVEj21V",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger (Session Entry)": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Buscar Registro por Session_ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Buscar Registro por Session_ID": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Usuario Existe en DB?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Usuario Existe en DB?": {
+      "main": [
+        [
+          {
+            "node": "Set: Contexto Usuario Recurrente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable: Registrar Nuevo Usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Contexto Usuario Recurrente": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Principal (Tools Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Registrar Nuevo Usuario": {
+      "main": [
+        [
+          {
+            "node": "Set: Contexto Inicial Limpio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Contexto Inicial Limpio": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Principal (Tools Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Principal (Tools Agent)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Principal (Tools Agent)": {
+      "main": [
+        [
+          {
+            "node": "IF: ¿Supera 5 Mensajes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: ¿Supera 5 Mensajes?": {
+      "main": [
+        [
+          {
+            "node": "LLM Summarizer (GPT-4o-mini)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Actualizar registro sin hacer resumen detallado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser (JSON)": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "LLM Summarizer (GPT-4o-mini)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Summarizer (GPT-4o-mini)": {
+      "main": [
+        [
+          {
+            "node": "Airtable: Sobreescribir Memoria (Idempotente)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable: Sobreescribir Memoria (Idempotente)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Principal (Tools Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent Principal (Tools Agent)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Summarizer (GPT-4o-mini)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar registro sin hacer resumen detallado": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e0a924ee-8de8-45d6-bdaa-65cf16a184bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9774988d2efc4d9ee3c1b87aae4c70ac6833a31e8031606306db07d7030a6b7c"
+  },
+  "nodeGroups": [],
+  "id": "KBldEvU5VeFwvhkR",
+  "tags": []
+}
